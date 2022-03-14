@@ -25,9 +25,8 @@ CONFIG_STRUCT = {
 class SFCCOAuth(httpx.Auth):
     OAUTH_BASE_URL = "https://account.demandware.com/dwsso/oauth2/access_token"
 
-    def __init__(self, host:str=None, client_key:str=None, client_secret:str=None, lock:threading.Lock=None) -> None:
+    def __init__(self, client_key:str=None, client_secret:str=None, lock:threading.Lock=None) -> None:
         super().__init__()
-        self.host = host
         self.client_secret = client_secret
         self.client_key = client_key
         self.token = None
@@ -186,7 +185,7 @@ class CatalogImages():
         self._queue = Queue()
         self._lock = threading.Lock()
         self._num_cpus = os.cpu_count()
-        self._auth = SFCCOAuth(host, client_key, client_secret, self._lock)
+        self._auth = SFCCOAuth(client_key, client_secret, self._lock)
         self._client = WebDavClient(f"https://{host}/on/demandware.servlet/webdav/Sites/Catalogs/{catalog_id}", self._auth)
         self._console = Console()
 
