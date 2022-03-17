@@ -206,13 +206,21 @@ class CatalogImages():
     def _donwload_worker(self):
         while True:
             product_id, images = self._queue.get()
+            thread_pool = []
 
-            self._console.log(f"Downloading images for product: {product_id}", style="blue")
+            self._console.log(f"Downloading images for product: {product_id}, total images: {len(images)}", style="blue")
+        
+            for i, image_path in enumerate(images):
+                th = threading.Thread(target=self._download_image, args=[image_path])
+                th.start()
+                thread_pool.append(th)
+        
+                if len(thread_pool) >= self._num_cpus or (i+1) == len(images):
+                    for t in thread_pool:
+                        t.join()
+                    thread_pool.clear()
             
-            for image_path in images:
-                self._download_image(image_path)
-            
-            self._console.log(f"Download of images complete for product {product_id}", style="green")
+            self._console.log(f"Download of images for product {product_id} complete", style="green")
             self._queue.task_done()
     
 
