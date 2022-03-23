@@ -95,8 +95,7 @@ class CatalogParser():
 
         self.catalog_xml_tree = ET.parse(file).getroot()
         self._output_xml_tree = ET.Element("catalog", {
-            "catalog-id":  self.catalog_id,
-            "xmlns": "http://www.demandware.com/xml/impex/catalog/2006-10-31"
+            "catalog-id":  self.catalog_id
         })
 
 
