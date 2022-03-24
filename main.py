@@ -296,7 +296,7 @@ class ExportJob():
             resp_data = resp.json()
             exec_status = resp_data.get("execution_status", None)
 
-            return False if exec_status == "finished" else True
+            return exec_status == "finished"
             
         return False
 
