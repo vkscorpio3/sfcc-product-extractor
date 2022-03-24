@@ -151,7 +151,9 @@ class CatalogParser():
 
         if image_block != None:
             product_id = product_elem.get("product-id")
-            self.image_mapping[product_id] = set()
+
+            if not product_id in self.image_mapping:
+                self.image_mapping[product_id] = set()
 
             for image_group in image_block.findall("default:image-group", self.NS):
                 for image in image_group.findall("default:image", self.NS):
