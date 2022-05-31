@@ -104,6 +104,13 @@ On the first run it will generate config.json file with following structure
     "download_images": true
 }
 ```
+Provide product ID's that you would like to extract, currenlty master products and products sets are supported.
+For master product it will export all master product variations.
+For Product Sets it will export all linked products, if they are masters will export its variations.
+Config example: 
+```json
+"products": ["110339", "110317", "100037", "350084"]
+```
 
 
 
