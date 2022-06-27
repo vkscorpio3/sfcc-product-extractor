@@ -22,6 +22,9 @@ CONFIG_STRUCT = {
 }
 
 
+EPORT_FILE_NAME = "master_catalog"
+
+
 class SFCCOAuth(httpx.Auth):
     OAUTH_BASE_URL = "https://account.demandware.com/dwsso/oauth2/access_token"
 
@@ -95,8 +98,7 @@ class CatalogParser():
 
         self.catalog_xml_tree = ET.parse(file).getroot()
         self._output_xml_tree = ET.Element("catalog", {
-            "catalog-id":  self.catalog_id,
-            "xmlns": "http://www.demandware.com/xml/impex/catalog/2006-10-31"
+            "catalog-id":  self.catalog_id
         })
 
 
@@ -149,7 +151,9 @@ class CatalogParser():
 
         if image_block != None:
             product_id = product_elem.get("product-id")
-            self.image_mapping[product_id] = set()
+
+            if not product_id in self.image_mapping:
+                self.image_mapping[product_id] = set()
 
             for image_group in image_block.findall("default:image-group", self.NS):
                 for image in image_group.findall("default:image", self.NS):
@@ -263,7 +267,7 @@ class ExportJob():
         client = httpx.Client(timeout=30)
         job_result = {"is_running": False, "status_code": 0}
         req_body = {
-            "export_file": "master_catalog",
+            "export_file": EPORT_FILE_NAME,
             "overwrite_export_file": True,
             "data_units": {
                 "catalogs": {
@@ -292,7 +296,7 @@ class ExportJob():
             resp_data = resp.json()
             exec_status = resp_data.get("execution_status", None)
 
-            return False if exec_status == "finished" else True
+            return exec_status == "finished"
             
         return False
 
@@ -350,26 +354,26 @@ if __name__ == "__main__":
 
         webdav_client = WebDavClient(f"https://{host}/on/demandware.servlet/webdav/Sites/Impex/src/instance", auth=ouath)
 
-        if not webdav_client.exists("master_catalog.zip"):
+        if not webdav_client.exists(f"{EPORT_FILE_NAME}.zip"):
             console.log("ERROR: Could not locate catalog export archive on webdav", style="red")
             sys.exit(1)
 
         console.log("Downloading export file...", style="blue")
        
-        webdav_client.download_file(from_path="master_catalog.zip", to_path="./temp/master_catalog.zip")
+        webdav_client.download_file(from_path=f"{EPORT_FILE_NAME}.zip", to_path=f"./temp/{EPORT_FILE_NAME}.zip")
 
-        if not os.path.exists("./temp/master_catalog.zip"):
+        if not os.path.exists(f"./temp/{EPORT_FILE_NAME}.zip"):
             console.log("ERROR: could not find catalog archive", style="red")
             sys.exit(1)
 
         console.log("Export file downloaded, removing file from wedav", style="green")
 
-        webdav_client.remove("master_catalog.zip")
+        webdav_client.remove(f"{EPORT_FILE_NAME}.zip")
 
         parser = CatalogParser(catalog_id)
 
-        with ZipFile("./temp/master_catalog.zip", mode="r") as zip:
-            with zip.open(f"master_catalog/catalogs/{catalog_id}/catalog.xml") as catalog_file:
+        with ZipFile(f"./temp/{EPORT_FILE_NAME}.zip", mode="r") as zip:
+            with zip.open(f"{EPORT_FILE_NAME}/catalogs/{catalog_id}/catalog.xml") as catalog_file:
                 parser.load_file(catalog_file)
                 parser.extract_products(products, download_images)
 
@@ -377,6 +381,5 @@ if __name__ == "__main__":
             image_handler = CatalogImages(host, client_key, client_secret, catalog_id, parser.image_mapping)
             image_handler.download_imapges("./src/images")
 
-        os.remove("./temp/master_catalog.zip")
-        sys.exit(0)
+        os.remove(f"./temp/{EPORT_FILE_NAME}.zip")
         
